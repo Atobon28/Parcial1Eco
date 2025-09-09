@@ -1,17 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player APP</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Subasta - Jugadores</title>
+    <link rel="stylesheet" href="/players_app/styles.css">
 </head>
 
 <body>
-    <h1>Player APP</h1>
-    <button id="get-btn">GET</button>
-    <script src="index.js"></script>
+    <div class="container">
+        <h1>🎯 Subasta de Objetos Mágicos</h1>
+        
+        <!-- Sección de registro -->
+        <div id="register-section" class="section">
+            <h2>Registro de Jugador</h2>
+            <div class="form-group">
+                <input type="text" id="player-name" placeholder="Ingresa tu nombre">
+                <button id="register-btn">Registrarse</button>
+            </div>
+            <p class="info">Al registrarte recibirás 1000 monedas para pujar</p>
+        </div>
+
+        <!-- Sección del jugador registrado -->
+        <div id="player-section" class="section hidden">
+            <div class="player-info">
+                <h2>¡Bienvenido, <span id="player-name-display"></span>!</h2>
+                <div class="balance">
+                    <span>💰 Balance disponible: </span>
+                    <span id="balance-amount">1000</span>
+                    <span> monedas</span>
+                </div>
+                <button id="refresh-balance-btn" class="small-btn">Actualizar Balance</button>
+            </div>
+
+            <div class="items-section">
+                <h3>📋 Catálogo de Objetos</h3>
+                <button id="refresh-items-btn">Actualizar Lista</button>
+                <div id="items-container">
+                    <!-- Los items se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para hacer pujas -->
+        <div id="bid-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Hacer Puja</h3>
+                <p id="bid-item-name"></p>
+                <p>Puja actual: <span id="current-bid"></span> monedas</p>
+                <div class="form-group">
+                    <input type="number" id="bid-amount" placeholder="Tu puja" min="1">
+                    <button id="submit-bid-btn">Pujar</button>
+                    <button id="cancel-bid-btn">Cancelar</button>
+                </div>
+                <div id="bid-error" class="error hidden"></div>
+            </div>
+        </div>
+
+        <!-- Área de mensajes -->
+        <div id="messages" class="messages"></div>
+    </div>
+
+    <script src="/players_app/index.js"></script>
 </body>
 
 </html>

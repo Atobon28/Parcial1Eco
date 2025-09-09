@@ -1,8 +1,248 @@
-document.getElementById("get-btn").addEventListener("click", getUsers);
+// Variables globales para manejar el estado del jugador
+let currentPlayer = null; // Info del jugador actual
+let currentItems = []; // Lista actual de items
+let selectedItem = null; // Item seleccionado para pujar
 
-function getUsers() {
-  fetch("/users")
-    .then((response) => response.json())
-    .then((data) => console.log("get response", data))
-    .catch((error) => console.error("Error:", error));
+// Cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Players App cargada');
+    
+    // Configurar event listeners para los botones
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    // Botón de registro
+    document.getElementById('register-btn').addEventListener('click', registerPlayer);
+    
+    // Enter en el campo de nombre para registrarse
+    document.getElementById('player-name').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            registerPlayer();
+        }
+    });
+    
+    // Botones de actualización
+    document.getElementById('refresh-balance-btn').addEventListener('click', updatePlayerBalance);
+    document.getElementById('refresh-items-btn').addEventListener('click', loadItems);
+    
+    // Botones del modal de pujas
+    document.getElementById('submit-bid-btn').addEventListener('click', submitBid);
+    document.getElementById('cancel-bid-btn').addEventListener('click', closeBidModal);
+    
+    // Enter en el campo de puja
+    document.getElementById('bid-amount').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            submitBid();
+        }
+    });
 }
+
+// Función para registrar un nuevo jugador
+async function registerPlayer() {
+    const nameInput = document.getElementById('player-name');
+    const playerName = nameInput.value.trim();
+    
+    // Validar que se ingresó un nombre
+    if (!playerName) {
+        showMessage('Por favor ingresa tu nombre', 'error');
+        return;
+    }
+    
+    try {
+        // Hacer request al servidor para registrar
+        const response = await fetch('/users/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: playerName })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Registro exitoso
+            currentPlayer = data;
+            showPlayerSection();
+            loadItems(); // Cargar la lista de items
+            showMessage(`¡Bienvenido ${data.name}! Tienes ${data.balance} monedas`, 'success');
+        } else {
+            // Error en el registro
+            showMessage(data.error || 'Error al registrarse', 'error');
+        }
+    } catch (error) {
+        console.error('Error al registrar:', error);
+        showMessage('Error de conexión al servidor', 'error');
+    }
+}
+
+// Mostrar la sección del jugador y ocultar el registro
+function showPlayerSection() {
+    document.getElementById('register-section').classList.add('hidden');
+    document.getElementById('player-section').classList.remove('hidden');
+    
+    // Actualizar la información mostrada
+    document.getElementById('player-name-display').textContent = currentPlayer.name;
+    document.getElementById('balance-amount').textContent = currentPlayer.balance;
+}
+
+// Cargar la lista de items desde el servidor
+async function loadItems() {
+    try {
+        const response = await fetch('/items?sort=highestBid');
+        
+        if (response.ok) {
+            currentItems = await response.json();
+            displayItems();
+        } else {
+            showMessage('Error al cargar los items', 'error');
+        }
+    } catch (error) {
+        console.error('Error al cargar items:', error);
+        showMessage('Error de conexión al cargar items', 'error');
+    }
+}
+
+// Mostrar los items en la pantalla
+function displayItems() {
+    const container = document.getElementById('items-container');
+    
+    if (currentItems.length === 0) {
+        container.innerHTML = '<p class="info">No hay items disponibles</p>';
+        return;
+    }
+    
+    container.innerHTML = currentItems.map(item => `
+        <div class="item-card">
+            <div class="item-name">⚔️ ${item.name}</div>
+            <div class="item-price">💰 Precio base: ${item.basePrice} monedas</div>
+            <div class="item-price">🔥 Puja actual: ${item.highestBid} monedas</div>
+            <div class="item-leader">
+                👑 Líder: ${item.highestBidder || 'Nadie aún'}
+            </div>
+            <button class="bid-btn" onclick="openBidModal(${item.id})">
+                Hacer Puja
+            </button>
+        </div>
+    `).join('');
+}
+
+// Abrir modal para hacer puja
+function openBidModal(itemId) {
+    selectedItem = currentItems.find(item => item.id === itemId);
+    
+    if (!selectedItem) {
+        showMessage('Item no encontrado', 'error');
+        return;
+    }
+    
+    // Configurar el modal
+    document.getElementById('bid-item-name').textContent = selectedItem.name;
+    document.getElementById('current-bid').textContent = selectedItem.highestBid;
+    document.getElementById('bid-amount').value = '';
+    document.getElementById('bid-amount').min = selectedItem.highestBid + 1;
+    document.getElementById('bid-error').classList.add('hidden');
+    
+    // Mostrar el modal
+    document.getElementById('bid-modal').classList.remove('hidden');
+    document.getElementById('bid-amount').focus();
+}
+
+// Cerrar modal de puja
+function closeBidModal() {
+    document.getElementById('bid-modal').classList.add('hidden');
+    selectedItem = null;
+}
+
+// Enviar la puja al servidor
+async function submitBid() {
+    const bidAmountInput = document.getElementById('bid-amount');
+    const bidAmount = parseInt(bidAmountInput.value);
+    
+    // Validaciones básicas
+    if (!bidAmount || bidAmount <= selectedItem.highestBid) {
+        showBidError('La puja debe ser mayor a la actual');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/items/${selectedItem.id}/bid`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: currentPlayer.id,
+                amount: bidAmount
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Puja exitosa
+            showMessage(`¡Puja exitosa! Ahora lideras ${selectedItem.name} con ${bidAmount} monedas`, 'success');
+            closeBidModal();
+            
+            // Actualizar la vista
+            loadItems();
+            updatePlayerBalance();
+        } else {
+            // Error en la puja
+            showBidError(data.error || 'Error al hacer la puja');
+        }
+    } catch (error) {
+        console.error('Error al hacer puja:', error);
+        showBidError('Error de conexión al servidor');
+    }
+}
+
+// Actualizar el balance del jugador
+async function updatePlayerBalance() {
+    if (!currentPlayer) return;
+    
+    try {
+        const response = await fetch(`/users/${currentPlayer.id}`);
+        
+        if (response.ok) {
+            const userData = await response.json();
+            document.getElementById('balance-amount').textContent = userData.balance;
+        }
+    } catch (error) {
+        console.error('Error al actualizar balance:', error);
+    }
+}
+
+// Mostrar error en el modal de pujas
+function showBidError(message) {
+    const errorElement = document.getElementById('bid-error');
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+}
+
+// Mostrar mensajes en la pantalla
+function showMessage(message, type = 'success') {
+    const messagesContainer = document.getElementById('messages');
+    
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${type}`;
+    messageElement.textContent = message;
+    
+    messagesContainer.appendChild(messageElement);
+    
+    // Quitar el mensaje después de 4 segundos
+    setTimeout(() => {
+        if (messageElement.parentNode) {
+            messageElement.parentNode.removeChild(messageElement);
+        }
+    }, 4000);
+}
+
+// Auto-actualizar items cada 5 segundos si hay un jugador registrado
+setInterval(() => {
+    if (currentPlayer) {
+        loadItems();
+        updatePlayerBalance();
+    }
+}, 5000);

@@ -1,0 +1,240 @@
+/* Estilos para la aplicación de jugadores */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+h2 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+h3 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.section {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.form-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+input[type="text"], input[type="number"] {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+input[type="text"]:focus, input[type="number"]:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+button {
+    padding: 12px 24px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.small-btn {
+    padding: 8px 16px !important;
+    font-size: 14px !important;
+    margin-left: 10px;
+}
+
+.info {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+}
+
+.player-info {
+    background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+}
+
+.balance {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+#items-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.item-card {
+    background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid #dee2e6;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.item-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.item-price {
+    color: #28a745;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.item-leader {
+    color: #007bff;
+    font-style: italic;
+    margin-bottom: 15px;
+}
+
+.bid-btn {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    width: 100%;
+    margin-top: 10px;
+}
+
+.bid-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.messages {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1001;
+}
+
+.message {
+    background: #28a745;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease-out;
+}
+
+.message.error {
+    background: #dc3545;
+}
+
+.error {
+    color: #dc3545;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    #items-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-group {
+        flex-direction: column;
+    }
+}

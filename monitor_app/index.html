@@ -1,17 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor APP</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Subasta - Monitor Público</title>
+    <link rel="stylesheet" href="/monitor_app/styles.css">
 </head>
 
 <body>
-    <h1>Monitor APP</h1>
-    <button id="get-btn">GET</button>
-    <script src="index.js"></script>
+    <div class="container">
+        <header class="header">
+            <h1>🏛️ SUBASTA PÚBLICA EN VIVO</h1>
+            <div class="timer-section">
+                <div id="timer" class="timer">60</div>
+                <div class="timer-label">segundos restantes</div>
+            </div>
+        </header>
+
+        <!-- Panel de control para el monitor -->
+        <div class="control-panel">
+            <button id="start-auction-btn" class="control-btn start-btn">🚀 Iniciar Subasta</button>
+            <button id="stop-auction-btn" class="control-btn stop-btn hidden">⏹️ Finalizar Subasta</button>
+            <div class="status">
+                <span id="auction-status">📴 Subasta Cerrada</span>
+            </div>
+        </div>
+
+        <!-- Tabla principal de items -->
+        <div class="items-display">
+            <h2>📋 Estado de los Objetos</h2>
+            <div id="items-table-container">
+                <table id="items-table">
+                    <thead>
+                        <tr>
+                            <th>🏷️ Objeto</th>
+                            <th>💰 Precio Base</th>
+                            <th>🔥 Puja Actual</th>
+                            <th>👑 Líder Actual</th>
+                            <th>📊 Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-tbody">
+                        <!-- Los items se cargarán aquí dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sección de resultados finales -->
+        <div id="results-section" class="results-section hidden">
+            <h2>🏆 RESULTADOS FINALES</h2>
+            <div id="results-container">
+                <!-- Los resultados se mostrarán aquí -->
+            </div>
+            <button id="new-auction-btn" class="control-btn">🔄 Nueva Subasta</button>
+        </div>
+
+        <!-- Panel de estadísticas en tiempo real -->
+        <div class="stats-panel">
+            <div class="stat-item">
+                <span class="stat-label">Total Objetos:</span>
+                <span id="total-items">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Con Pujas:</span>
+                <span id="items-with-bids">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Valor Total:</span>
+                <span id="total-value">0</span> monedas
+            </div>
+        </div>
+    </div>
+
+    <script src="/monitor_app/index.js"></script>
 </body>
 
 </html>
