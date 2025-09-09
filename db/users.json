@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "name": "Example user",
+    "balance": 1000,
+    "bids": [
+      {
+        "itemId": 2,
+        "amount": 300
+      }
+    ]
+  }
+]
