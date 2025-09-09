@@ -9,5 +9,11 @@
         "amount": 300
       }
     ]
+  },
+  {
+    "id": 2,
+    "name": "Ana",
+    "balance": 1000,
+    "bids": []
   }
 ]

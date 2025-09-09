@@ -1,15 +1,32 @@
 const express = require("express")
 const path = require("path")
+const cors = require("cors") // Agregamos cors para evitar problemas
 const db = require("./db-util")
 
 const app = express()
 
+// Middleware para CORS (si es necesario)
+app.use(cors())
+
 // Middleware para poder manejar JSON en las requests
 app.use(express.json())
 
-// Servir las aplicaciones estáticas (HTML, CSS, JS)
+// CORREGIR: Servir archivos estáticos con rutas absolutas correctas
 app.use("/players-app", express.static(path.join(__dirname, "players_app"))) 
 app.use("/monitor-app", express.static(path.join(__dirname, "monitor_app")))
+
+// También agregamos soporte para servir archivos estáticos directamente
+app.use("/players_app", express.static(path.join(__dirname, "players_app"))) 
+app.use("/monitor_app", express.static(path.join(__dirname, "monitor_app")))
+
+// ===== RUTA DE PRUEBA PARA VERIFICAR QUE EL SERVIDOR FUNCIONA =====
+app.get("/", (req, res) => {
+  res.send(`
+    <h1>🎯 Servidor de Subastas Activo</h1>
+    <p><a href="/players-app">Players App</a></p>
+    <p><a href="/monitor-app">Monitor App</a></p>
+  `)
+})
 
 // ===== ENDPOINTS PARA LA APLICACIÓN DE SUBASTAS =====
 
@@ -42,6 +59,8 @@ app.post("/users/register", (req, res) => {
   // Guardar el nuevo usuario
   db.add("users", newUser)
   
+  console.log(`✅ Usuario registrado: ${newUser.name} con ID ${newUser.id}`)
+  
   // Responder con la info del usuario
   res.status(201).json({
     id: newUser.id,
@@ -73,6 +92,8 @@ app.get("/users/:id", (req, res) => {
   
   const availableBalance = user.balance - reservedAmount
   
+  console.log(`📊 Balance de ${user.name}: Disponible ${availableBalance}, Reservado ${reservedAmount}`)
+  
   res.json({
     id: user.id,
     name: user.name,
@@ -91,8 +112,10 @@ app.get("/items", (req, res) => {
       items = items.sort((a, b) => b.highestBid - a.highestBid)
     }
     
+    console.log(`📋 Enviando ${items.length} items`)
     res.json(items)
   } catch (error) {
+    console.error("❌ Error al obtener items:", error)
     res.status(500).json({ error: "error del servidor al obtener los items" })
   }
 })
@@ -102,9 +125,12 @@ app.post("/items/:id/bid", (req, res) => {
   const itemId = parseInt(req.params.id)
   const { userId, amount } = req.body
   
+  console.log(`🎯 Nueva puja: Usuario ${userId} ofrece ${amount} por item ${itemId}`)
+  
   // Verificar que la subasta esté abierta
   const auction = db.load("auction")
   if (!auction.isOpen) {
+    console.log("❌ Puja rechazada: subasta cerrada")
     return res.status(403).json({ error: "la subasta está cerrada" })
   }
   
@@ -112,6 +138,7 @@ app.post("/items/:id/bid", (req, res) => {
   const items = db.load("items")
   const itemIndex = items.findIndex(item => item.id === itemId)
   if (itemIndex === -1) {
+    console.log("❌ Puja rechazada: item no encontrado")
     return res.status(404).json({ error: "item no encontrado" })
   }
   
@@ -119,6 +146,7 @@ app.post("/items/:id/bid", (req, res) => {
   const users = db.load("users")
   const user = users.find(u => u.id === userId)
   if (!user) {
+    console.log("❌ Puja rechazada: usuario no encontrado")
     return res.status(404).json({ error: "usuario no encontrado" })
   }
   
@@ -126,6 +154,7 @@ app.post("/items/:id/bid", (req, res) => {
   
   // Verificar que la puja sea mayor a la actual
   if (amount <= item.highestBid) {
+    console.log(`❌ Puja rechazada: ${amount} no es mayor que ${item.highestBid}`)
     return res.status(400).json({ error: "la oferta debe ser mayor a la actual" })
   }
   
@@ -140,6 +169,7 @@ app.post("/items/:id/bid", (req, res) => {
   
   // Verificar que tenga saldo suficiente
   if (amount > availableBalance) {
+    console.log(`❌ Puja rechazada: saldo insuficiente. Necesita ${amount}, tiene ${availableBalance}`)
     return res.status(400).json({ error: "saldo insuficiente" })
   }
   
@@ -158,6 +188,8 @@ app.post("/items/:id/bid", (req, res) => {
   })
   db.save("users", users)
   
+  console.log(`✅ Puja exitosa: ${user.name} ahora lidera ${item.name} con ${amount}`)
+  
   // Responder con la información actualizada
   res.json({
     itemId: itemId,
@@ -172,6 +204,7 @@ app.post("/auction/openAll", (req, res) => {
   
   // Verificar que no esté ya abierta
   if (auction.isOpen) {
+    console.log("❌ No se puede abrir: subasta ya abierta")
     return res.status(400).json({ error: "la subasta ya está abierta" })
   }
   
@@ -182,11 +215,14 @@ app.post("/auction/openAll", (req, res) => {
     
     db.save("auction", auction)
     
+    console.log(`🚀 SUBASTA ABIERTA a las ${auction.startTime}`)
+    
     res.json({
       auction: "abierta",
       startTime: auction.startTime
     })
   } catch (error) {
+    console.error("❌ Error al abrir subasta:", error)
     res.status(500).json({ error: "no se pudo abrir la subasta" })
   }
 })
@@ -197,6 +233,7 @@ app.post("/auction/closeAll", (req, res) => {
   
   // Verificar que esté abierta
   if (!auction.isOpen) {
+    console.log("❌ No se puede cerrar: subasta ya cerrada")
     return res.status(400).json({ error: "la subasta ya está cerrada" })
   }
   
@@ -210,6 +247,8 @@ app.post("/auction/closeAll", (req, res) => {
     const users = db.load("users")
     const results = []
     
+    console.log("🏁 PROCESANDO RESULTADOS DE LA SUBASTA...")
+    
     // Marcar items como vendidos y descontar dinero de ganadores
     items.forEach(item => {
       if (item.highestBidder) {
@@ -219,6 +258,7 @@ app.post("/auction/closeAll", (req, res) => {
         const winnerIndex = users.findIndex(u => u.name === item.highestBidder)
         if (winnerIndex !== -1) {
           users[winnerIndex].balance -= item.highestBid
+          console.log(`💰 ${item.highestBidder} pagó ${item.highestBid} por ${item.name}`)
         }
         
         results.push({
@@ -234,16 +274,19 @@ app.post("/auction/closeAll", (req, res) => {
     db.save("items", items)
     db.save("users", users)
     
+    console.log(`🎉 SUBASTA CERRADA. ${results.length} items vendidos`)
+    
     res.json({
       auction: "cerrada",
       results: results
     })
   } catch (error) {
+    console.error("❌ Error al cerrar subasta:", error)
     res.status(500).json({ error: "no se pudo cerrar la subasta" })
   }
 })
 
-// Endpoint básico que ya tenías
+// Endpoint básico que ya tenías (para compatibilidad)
 app.get("/users", (req, res) => {
   let users = db.load("users")
   
@@ -256,8 +299,13 @@ app.get("/users", (req, res) => {
 })
 
 // Iniciar el servidor
-app.listen(5080, () => {
-  console.log("🚀 Servidor corriendo en http://localhost:5080")
-  console.log("📱 Players App: http://localhost:5080/players-app")
-  console.log("📺 Monitor App: http://localhost:5080/monitor-app")
+const PORT = 5080
+app.listen(PORT, () => {
+  console.log("=".repeat(50))
+  console.log("🚀 SERVIDOR DE SUBASTAS INICIADO")
+  console.log("=".repeat(50))
+  console.log(`📍 Servidor corriendo en http://localhost:${PORT}`)
+  console.log(`📱 Players App: http://localhost:${PORT}/players-app`)
+  console.log(`📺 Monitor App: http://localhost:${PORT}/monitor-app`)
+  console.log("=".repeat(50))
 })
