@@ -1,67 +1,55 @@
 const express = require("express")
 const path = require("path")
-const cors = require("cors") // Agregamos cors para evitar problemas
+const cors = require("cors")
 const db = require("./db-util")
 
 const app = express()
 
-// Middleware para CORS (si es necesario)
+// Middleware basico
 app.use(cors())
-
-// Middleware para poder manejar JSON en las requests
 app.use(express.json())
 
-// CORREGIR: Servir archivos estáticos con rutas absolutas correctas
-app.use("/players-app", express.static(path.join(__dirname, "players_app"))) 
-app.use("/monitor-app", express.static(path.join(__dirname, "monitor_app")))
-
-// También agregamos soporte para servir archivos estáticos directamente
+// Servir archivos estaaticos para las dos apps
 app.use("/players_app", express.static(path.join(__dirname, "players_app"))) 
 app.use("/monitor_app", express.static(path.join(__dirname, "monitor_app")))
 
-// ===== RUTA DE PRUEBA PARA VERIFICAR QUE EL SERVIDOR FUNCIONA =====
+// Ruta principal básica
 app.get("/", (req, res) => {
   res.send(`
-    <h1>🎯 Servidor de Subastas Activo</h1>
-    <p><a href="/players-app">Players App</a></p>
-    <p><a href="/monitor-app">Monitor App</a></p>
+    <h1>Servidor de Subastas</h1>
+    <p><a href="/players_app">Players App</a></p>
+    <p><a href="/monitor_app">Monitor App</a></p>
   `)
 })
 
-// ===== ENDPOINTS PARA LA APLICACIÓN DE SUBASTAS =====
-
-// 1. REGISTRO DE USUARIOS (para players_app)
+// ENDPOINT: Registrar usuario
 app.post("/users/register", (req, res) => {
   const { name } = req.body
   
-  // Validación: el nombre es obligatorio
+  // Validar nombre
   if (!name || name.trim() === "") {
     return res.status(400).json({ error: "el nombre es obligatorio" })
   }
   
-  // Cargar usuarios existentes
   const users = db.load("users")
   
-  // Validación: el nombre no debe existir ya
+  // Verificar que el nombre no exista
   const existingUser = users.find(user => user.name === name.trim())
   if (existingUser) {
     return res.status(409).json({ error: "el nombre de usuario ya existe" })
   }
   
-  // Crear nuevo usuario con balance inicial de 1000
+  // Crear nuevo usuario con balance inicial
   const newUser = {
-    id: users.length + 1, // ID simple incremental
+    id: users.length + 1,
     name: name.trim(),
     balance: 1000,
-    bids: [] // Array para guardar las pujas del usuario
+    bids: []
   }
   
-  // Guardar el nuevo usuario
   db.add("users", newUser)
+  console.log(`Usuario registrado: ${newUser.name}`)
   
-  console.log(`✅ Usuario registrado: ${newUser.name} con ID ${newUser.id}`)
-  
-  // Responder con la info del usuario
   res.status(201).json({
     id: newUser.id,
     name: newUser.name,
@@ -69,7 +57,7 @@ app.post("/users/register", (req, res) => {
   })
 })
 
-// 2. OBTENER INFORMACIÓN DE UN USUARIO ESPECÍFICO
+// ENDPOINT: Obtener información de usuario
 app.get("/users/:id", (req, res) => {
   const userId = parseInt(req.params.id)
   const users = db.load("users")
@@ -79,11 +67,10 @@ app.get("/users/:id", (req, res) => {
     return res.status(404).json({ error: "usuario no encontrado" })
   }
   
-  // Calcular balance disponible (balance inicial - dinero reservado en pujas activas)
+  // Calcular balance disponible (balance - dinero reservado en pujas)
   const items = db.load("items")
   let reservedAmount = 0
   
-  // Buscar en qué items este usuario es el mejor postor
   items.forEach(item => {
     if (item.highestBidder === user.name) {
       reservedAmount += item.highestBid
@@ -91,8 +78,6 @@ app.get("/users/:id", (req, res) => {
   })
   
   const availableBalance = user.balance - reservedAmount
-  
-  console.log(`📊 Balance de ${user.name}: Disponible ${availableBalance}, Reservado ${reservedAmount}`)
   
   res.json({
     id: user.id,
@@ -102,35 +87,31 @@ app.get("/users/:id", (req, res) => {
   })
 })
 
-// 3. OBTENER LISTA DE ITEMS (para ambas apps)
+// ENDPOINT: Obtener lista de items
 app.get("/items", (req, res) => {
   try {
     let items = db.load("items")
     
-    // Si piden ordenar por puja más alta (de mayor a menor)
+    // Ordenar por puja más alta si se solicita
     if (req.query.sort === "highestBid") {
       items = items.sort((a, b) => b.highestBid - a.highestBid)
     }
     
-    console.log(`📋 Enviando ${items.length} items`)
     res.json(items)
   } catch (error) {
-    console.error("❌ Error al obtener items:", error)
+    console.error("Error al obtener items:", error)
     res.status(500).json({ error: "error del servidor al obtener los items" })
   }
 })
 
-// 4. HACER PUJA EN UN ITEM
+// ENDPOINT: Hacer puja en un item
 app.post("/items/:id/bid", (req, res) => {
   const itemId = parseInt(req.params.id)
   const { userId, amount } = req.body
   
-  console.log(`🎯 Nueva puja: Usuario ${userId} ofrece ${amount} por item ${itemId}`)
-  
   // Verificar que la subasta esté abierta
   const auction = db.load("auction")
   if (!auction.isOpen) {
-    console.log("❌ Puja rechazada: subasta cerrada")
     return res.status(403).json({ error: "la subasta está cerrada" })
   }
   
@@ -138,7 +119,6 @@ app.post("/items/:id/bid", (req, res) => {
   const items = db.load("items")
   const itemIndex = items.findIndex(item => item.id === itemId)
   if (itemIndex === -1) {
-    console.log("❌ Puja rechazada: item no encontrado")
     return res.status(404).json({ error: "item no encontrado" })
   }
   
@@ -146,7 +126,6 @@ app.post("/items/:id/bid", (req, res) => {
   const users = db.load("users")
   const user = users.find(u => u.id === userId)
   if (!user) {
-    console.log("❌ Puja rechazada: usuario no encontrado")
     return res.status(404).json({ error: "usuario no encontrado" })
   }
   
@@ -154,7 +133,6 @@ app.post("/items/:id/bid", (req, res) => {
   
   // Verificar que la puja sea mayor a la actual
   if (amount <= item.highestBid) {
-    console.log(`❌ Puja rechazada: ${amount} no es mayor que ${item.highestBid}`)
     return res.status(400).json({ error: "la oferta debe ser mayor a la actual" })
   }
   
@@ -169,7 +147,6 @@ app.post("/items/:id/bid", (req, res) => {
   
   // Verificar que tenga saldo suficiente
   if (amount > availableBalance) {
-    console.log(`❌ Puja rechazada: saldo insuficiente. Necesita ${amount}, tiene ${availableBalance}`)
     return res.status(400).json({ error: "saldo insuficiente" })
   }
   
@@ -177,10 +154,10 @@ app.post("/items/:id/bid", (req, res) => {
   items[itemIndex].highestBid = amount
   items[itemIndex].highestBidder = user.name
   
-  // Guardar los cambios
+  // Guardar cambios
   db.save("items", items)
   
-  // Agregar la puja al historial del usuario
+  // Agregar puja al historial del usuario
   const userIndex = users.findIndex(u => u.id === userId)
   users[userIndex].bids.push({
     itemId: itemId,
@@ -188,9 +165,8 @@ app.post("/items/:id/bid", (req, res) => {
   })
   db.save("users", users)
   
-  console.log(`✅ Puja exitosa: ${user.name} ahora lidera ${item.name} con ${amount}`)
+  console.log(`Puja exitosa: ${user.name} lidera ${item.name} con ${amount}`)
   
-  // Responder con la información actualizada
   res.json({
     itemId: itemId,
     highestBid: amount,
@@ -198,42 +174,36 @@ app.post("/items/:id/bid", (req, res) => {
   })
 })
 
-// 5. ABRIR LA SUBASTA (para monitor_app)
+// ENDPOINT: Abrir subasta
 app.post("/auction/openAll", (req, res) => {
   const auction = db.load("auction")
   
-  // Verificar que no esté ya abierta
   if (auction.isOpen) {
-    console.log("❌ No se puede abrir: subasta ya abierta")
     return res.status(400).json({ error: "la subasta ya está abierta" })
   }
   
   try {
-    // Abrir la subasta
     auction.isOpen = true
     auction.startTime = new Date().toISOString()
     
     db.save("auction", auction)
-    
-    console.log(`🚀 SUBASTA ABIERTA a las ${auction.startTime}`)
+    console.log(`Subasta abierta: ${auction.startTime}`)
     
     res.json({
       auction: "abierta",
       startTime: auction.startTime
     })
   } catch (error) {
-    console.error("❌ Error al abrir subasta:", error)
+    console.error("Error al abrir subasta:", error)
     res.status(500).json({ error: "no se pudo abrir la subasta" })
   }
 })
 
-// 6. CERRAR LA SUBASTA (para monitor_app)
+// ENDPOINT: Cerrar subasta
 app.post("/auction/closeAll", (req, res) => {
   const auction = db.load("auction")
   
-  // Verificar que esté abierta
   if (!auction.isOpen) {
-    console.log("❌ No se puede cerrar: subasta ya cerrada")
     return res.status(400).json({ error: "la subasta ya está cerrada" })
   }
   
@@ -247,18 +217,18 @@ app.post("/auction/closeAll", (req, res) => {
     const users = db.load("users")
     const results = []
     
-    console.log("🏁 PROCESANDO RESULTADOS DE LA SUBASTA...")
+    console.log("Procesando resultados de la subasta...")
     
-    // Marcar items como vendidos y descontar dinero de ganadores
+    // Marcar items como vendidos y descontar dinero
     items.forEach(item => {
       if (item.highestBidder) {
         item.sold = true
         
-        // Encontrar al usuario ganador y descontar el dinero
+        // Descontar dinero del ganador
         const winnerIndex = users.findIndex(u => u.name === item.highestBidder)
         if (winnerIndex !== -1) {
           users[winnerIndex].balance -= item.highestBid
-          console.log(`💰 ${item.highestBidder} pagó ${item.highestBid} por ${item.name}`)
+          console.log(`${item.highestBidder} pago ${item.highestBid} por ${item.name}`)
         }
         
         results.push({
@@ -274,23 +244,22 @@ app.post("/auction/closeAll", (req, res) => {
     db.save("items", items)
     db.save("users", users)
     
-    console.log(`🎉 SUBASTA CERRADA. ${results.length} items vendidos`)
+    console.log(`Subasta cerrada. ${results.length} items vendidos`)
     
     res.json({
       auction: "cerrada",
       results: results
     })
   } catch (error) {
-    console.error("❌ Error al cerrar subasta:", error)
+    console.error("Error al cerrar subasta:", error)
     res.status(500).json({ error: "no se pudo cerrar la subasta" })
   }
 })
 
-// Endpoint básico que ya tenías (para compatibilidad)
+// Endpoint básico de usuarios (para compatibilidad)
 app.get("/users", (req, res) => {
   let users = db.load("users")
   
-  // Verificar que users sea un array
   if (!Array.isArray(users)) {
     users = []
   }
@@ -298,14 +267,13 @@ app.get("/users", (req, res) => {
   res.status(200).send(users)
 })
 
-// Iniciar el servidor
+// Iniciar servidor
 const PORT = 5080
 app.listen(PORT, () => {
-  console.log("=".repeat(50))
-  console.log("🚀 SERVIDOR DE SUBASTAS INICIADO")
-  console.log("=".repeat(50))
-  console.log(`📍 Servidor corriendo en http://localhost:${PORT}`)
-  console.log(`📱 Players App: http://localhost:${PORT}/players-app`)
-  console.log(`📺 Monitor App: http://localhost:${PORT}/monitor-app`)
-  console.log("=".repeat(50))
+  console.log("=".repeat(40))
+  console.log("Servidor de Subastas Iniciado")
+  console.log("=".repeat(40))
+  console.log(`Players: http://localhost:${PORT}/players_app`)
+  console.log(`Monitor: http://localhost:${PORT}/monitor_app`)
+  console.log("=".repeat(40))
 })

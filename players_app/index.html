@@ -10,9 +10,8 @@
 
 <body>
     <div class="container">
-        <h1>🎯 Subasta de Objetos Mágicos</h1>
+        <h1>Subasta de Objetos</h1>
         
-        <!-- Sección de registro -->
         <div id="register-section" class="section">
             <h2>Registro de Jugador</h2>
             <div class="form-group">
@@ -22,12 +21,11 @@
             <p class="info">Al registrarte recibirás 1000 monedas para pujar</p>
         </div>
 
-        <!-- Sección del jugador registrado -->
         <div id="player-section" class="section hidden">
             <div class="player-info">
-                <h2>¡Bienvenido, <span id="player-name-display"></span>!</h2>
+                <h2>Bienvenido, <span id="player-name-display"></span></h2>
                 <div class="balance">
-                    <span>💰 Balance disponible: </span>
+                    <span>Balance disponible: </span>
                     <span id="balance-amount">1000</span>
                     <span> monedas</span>
                 </div>
@@ -35,15 +33,13 @@
             </div>
 
             <div class="items-section">
-                <h3>📋 Catálogo de Objetos</h3>
+                <h3>Catálogo de Objetos</h3>
                 <button id="refresh-items-btn">Actualizar Lista</button>
                 <div id="items-container">
-                    <!-- Los items se cargarán aquí dinámicamente -->
                 </div>
             </div>
         </div>
 
-        <!-- Modal para hacer pujas -->
         <div id="bid-modal" class="modal hidden">
             <div class="modal-content">
                 <h3>Hacer Puja</h3>
@@ -58,7 +54,6 @@
             </div>
         </div>
 
-        <!-- Área de mensajes -->
         <div id="messages" class="messages"></div>
     </div>
 

@@ -1,13 +1,10 @@
-// Variables globales para manejar el estado del jugador
-let currentPlayer = null; // Info del jugador actual
-let currentItems = []; // Lista actual de items
-let selectedItem = null; // Item seleccionado para pujar
+// Variables para manejar el estado del jugador
+let currentPlayer = null;
+let currentItems = [];
+let selectedItem = null;
 
 // Cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Players App cargada');
-    
-    // Configurar event listeners para los botones
     setupEventListeners();
 });
 
@@ -15,7 +12,7 @@ function setupEventListeners() {
     // Botón de registro
     document.getElementById('register-btn').addEventListener('click', registerPlayer);
     
-    // Enter en el campo de nombre para registrarse
+    // Enter en el campo de nombre
     document.getElementById('player-name').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             registerPlayer();
@@ -26,7 +23,7 @@ function setupEventListeners() {
     document.getElementById('refresh-balance-btn').addEventListener('click', updatePlayerBalance);
     document.getElementById('refresh-items-btn').addEventListener('click', loadItems);
     
-    // Botones del modal de pujas
+    // Botones del modal
     document.getElementById('submit-bid-btn').addEventListener('click', submitBid);
     document.getElementById('cancel-bid-btn').addEventListener('click', closeBidModal);
     
@@ -38,19 +35,17 @@ function setupEventListeners() {
     });
 }
 
-// Función para registrar un nuevo jugador
+// Registrar nuevo jugador
 async function registerPlayer() {
     const nameInput = document.getElementById('player-name');
     const playerName = nameInput.value.trim();
     
-    // Validar que se ingresó un nombre
     if (!playerName) {
         showMessage('Por favor ingresa tu nombre', 'error');
         return;
     }
     
     try {
-        // Hacer request al servidor para registrar
         const response = await fetch('/users/register', {
             method: 'POST',
             headers: {
@@ -62,13 +57,11 @@ async function registerPlayer() {
         const data = await response.json();
         
         if (response.ok) {
-            // Registro exitoso
             currentPlayer = data;
             showPlayerSection();
-            loadItems(); // Cargar la lista de items
-            showMessage(`¡Bienvenido ${data.name}! Tienes ${data.balance} monedas`, 'success');
+            loadItems();
+            showMessage(`Bienvenido ${data.name}! Tienes ${data.balance} monedas`, 'success');
         } else {
-            // Error en el registro
             showMessage(data.error || 'Error al registrarse', 'error');
         }
     } catch (error) {
@@ -77,17 +70,16 @@ async function registerPlayer() {
     }
 }
 
-// Mostrar la sección del jugador y ocultar el registro
+// Mostrar sección del jugador
 function showPlayerSection() {
     document.getElementById('register-section').classList.add('hidden');
     document.getElementById('player-section').classList.remove('hidden');
     
-    // Actualizar la información mostrada
     document.getElementById('player-name-display').textContent = currentPlayer.name;
     document.getElementById('balance-amount').textContent = currentPlayer.balance;
 }
 
-// Cargar la lista de items desde el servidor
+// Cargar lista de items
 async function loadItems() {
     try {
         const response = await fetch('/items?sort=highestBid');
@@ -104,7 +96,7 @@ async function loadItems() {
     }
 }
 
-// Mostrar los items en la pantalla
+// Mostrar items en la pantalla
 function displayItems() {
     const container = document.getElementById('items-container');
     
@@ -115,11 +107,11 @@ function displayItems() {
     
     container.innerHTML = currentItems.map(item => `
         <div class="item-card">
-            <div class="item-name">⚔️ ${item.name}</div>
-            <div class="item-price">💰 Precio base: ${item.basePrice} monedas</div>
-            <div class="item-price">🔥 Puja actual: ${item.highestBid} monedas</div>
+            <div class="item-name">${item.name}</div>
+            <div class="item-price">Precio base: ${item.basePrice} monedas</div>
+            <div class="item-price">Puja actual: ${item.highestBid} monedas</div>
             <div class="item-leader">
-                👑 Líder: ${item.highestBidder || 'Nadie aún'}
+                Líder: ${item.highestBidder || 'Nadie aún'}
             </div>
             <button class="bid-btn" onclick="openBidModal(${item.id})">
                 Hacer Puja
@@ -137,14 +129,12 @@ function openBidModal(itemId) {
         return;
     }
     
-    // Configurar el modal
     document.getElementById('bid-item-name').textContent = selectedItem.name;
     document.getElementById('current-bid').textContent = selectedItem.highestBid;
     document.getElementById('bid-amount').value = '';
     document.getElementById('bid-amount').min = selectedItem.highestBid + 1;
     document.getElementById('bid-error').classList.add('hidden');
     
-    // Mostrar el modal
     document.getElementById('bid-modal').classList.remove('hidden');
     document.getElementById('bid-amount').focus();
 }
@@ -155,12 +145,11 @@ function closeBidModal() {
     selectedItem = null;
 }
 
-// Enviar la puja al servidor
+// Enviar puja al servidor
 async function submitBid() {
     const bidAmountInput = document.getElementById('bid-amount');
     const bidAmount = parseInt(bidAmountInput.value);
     
-    // Validaciones básicas
     if (!bidAmount || bidAmount <= selectedItem.highestBid) {
         showBidError('La puja debe ser mayor a la actual');
         return;
@@ -181,15 +170,11 @@ async function submitBid() {
         const data = await response.json();
         
         if (response.ok) {
-            // Puja exitosa
-            showMessage(`¡Puja exitosa! Ahora lideras ${selectedItem.name} con ${bidAmount} monedas`, 'success');
+            showMessage(`Puja exitosa! Ahora lideras ${selectedItem.name} con ${bidAmount} monedas`, 'success');
             closeBidModal();
-            
-            // Actualizar la vista
             loadItems();
             updatePlayerBalance();
         } else {
-            // Error en la puja
             showBidError(data.error || 'Error al hacer la puja');
         }
     } catch (error) {
@@ -198,7 +183,7 @@ async function submitBid() {
     }
 }
 
-// Actualizar el balance del jugador
+// Actualizar balance del jugador
 async function updatePlayerBalance() {
     if (!currentPlayer) return;
     
@@ -214,14 +199,14 @@ async function updatePlayerBalance() {
     }
 }
 
-// Mostrar error en el modal de pujas
+// Mostrar error en el modal
 function showBidError(message) {
     const errorElement = document.getElementById('bid-error');
     errorElement.textContent = message;
     errorElement.classList.remove('hidden');
 }
 
-// Mostrar mensajes en la pantalla
+// Mostrar mensajes en pantalla
 function showMessage(message, type = 'success') {
     const messagesContainer = document.getElementById('messages');
     
@@ -231,7 +216,7 @@ function showMessage(message, type = 'success') {
     
     messagesContainer.appendChild(messageElement);
     
-    // Quitar el mensaje después de 4 segundos
+    // Quitar mensaje después de 4 segundos
     setTimeout(() => {
         if (messageElement.parentNode) {
             messageElement.parentNode.removeChild(messageElement);
@@ -239,7 +224,7 @@ function showMessage(message, type = 'success') {
     }, 4000);
 }
 
-// Auto-actualizar items cada 5 segundos si hay un jugador registrado
+// Auto-actualizar cada 5 segundos
 setInterval(() => {
     if (currentPlayer) {
         loadItems();

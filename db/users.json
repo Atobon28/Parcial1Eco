@@ -15,5 +15,35 @@
     "name": "Ana",
     "balance": 1000,
     "bids": []
+  },
+  {
+    "id": 3,
+    "name": "Ana Tobon",
+    "balance": 287,
+    "bids": [
+      {
+        "itemId": 10,
+        "amount": 301
+      },
+      {
+        "itemId": 9,
+        "amount": 111
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "sary",
+    "balance": 777,
+    "bids": [
+      {
+        "itemId": 9,
+        "amount": 115
+      },
+      {
+        "itemId": 1,
+        "amount": 108
+      }
+    ]
   }
 ]

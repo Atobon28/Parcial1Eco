@@ -1,18 +1,13 @@
 // Variables globales para el monitor
-let auctionTimer = null; // Timer del contador
-let timeRemaining = 60; // Tiempo restante en segundos
-let isAuctionActive = false; // Estado de la subasta
-let currentItems = []; // Items actuales
-let updateInterval = null; // Intervalo para actualizar datos
+let auctionTimer = null;
+let timeRemaining = 60;
+let isAuctionActive = false;
+let currentItems = [];
+let updateInterval = null;
 
 // Cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Monitor App cargada');
-    
-    // Configurar event listeners
     setupEventListeners();
-    
-    // Cargar datos iniciales
     loadInitialData();
 });
 
@@ -23,10 +18,9 @@ function setupEventListeners() {
     document.getElementById('new-auction-btn').addEventListener('click', resetForNewAuction);
 }
 
-// Cargar datos iniciales del servidor
+// Cargar datos iniciales
 async function loadInitialData() {
     try {
-        // Cargar items
         await loadItems();
         updateStats();
     } catch (error) {
@@ -34,10 +28,9 @@ async function loadInitialData() {
     }
 }
 
-// Iniciar la subasta
+// Iniciar subasta
 async function startAuction() {
     try {
-        // Enviar request al servidor para abrir la subasta
         const response = await fetch('/auction/openAll', {
             method: 'POST',
             headers: {
@@ -48,21 +41,17 @@ async function startAuction() {
         const data = await response.json();
         
         if (response.ok) {
-            // Subasta iniciada exitosamente
             isAuctionActive = true;
             
-            // Actualizar interfaz
             document.getElementById('start-auction-btn').classList.add('hidden');
             document.getElementById('stop-auction-btn').classList.remove('hidden');
             
             const statusElement = document.getElementById('auction-status');
-            statusElement.textContent = '🟢 Subasta Activa';
+            statusElement.textContent = 'Subasta Activa';
             statusElement.classList.add('active');
             
-            // Iniciar contador
+            // Iniciar contador y actualizaciones
             startTimer();
-            
-            // Iniciar actualizaciones automáticas cada segundo
             startAutoUpdates();
             
             console.log('Subasta iniciada:', data);
@@ -75,17 +64,16 @@ async function startAuction() {
     }
 }
 
-// Parar la subasta manualmente
+// Parar subasta manualmente
 async function stopAuction() {
     if (confirm('¿Estás seguro de que quieres finalizar la subasta?')) {
         await endAuction();
     }
 }
 
-// Finalizar la subasta (automático o manual)
+// Finalizar subasta
 async function endAuction() {
     try {
-        // Enviar request al servidor para cerrar la subasta
         const response = await fetch('/auction/closeAll', {
             method: 'POST',
             headers: {
@@ -96,7 +84,6 @@ async function endAuction() {
         const data = await response.json();
         
         if (response.ok) {
-            // Subasta finalizada exitosamente
             isAuctionActive = false;
             
             // Parar timer y actualizaciones
@@ -107,7 +94,7 @@ async function endAuction() {
             document.getElementById('stop-auction-btn').classList.add('hidden');
             
             const statusElement = document.getElementById('auction-status');
-            statusElement.textContent = '🔴 Subasta Finalizada';
+            statusElement.textContent = 'Subasta Finalizada';
             statusElement.classList.remove('active');
             
             // Mostrar resultados
@@ -123,16 +110,16 @@ async function endAuction() {
     }
 }
 
-// Iniciar el contador de tiempo
+// Iniciar contador de tiempo
 function startTimer() {
-    timeRemaining = 60; // Resetear a 60 segundos
+    timeRemaining = 60;
     updateTimerDisplay();
     
     auctionTimer = setInterval(() => {
         timeRemaining--;
         updateTimerDisplay();
         
-        // Cambiar estilos según el tiempo restante
+        // Cambiar estilos según tiempo restante
         const timerElement = document.getElementById('timer');
         if (timeRemaining <= 10) {
             timerElement.classList.add('critical');
@@ -147,7 +134,7 @@ function startTimer() {
     }, 1000);
 }
 
-// Parar el contador
+// Parar contador
 function stopTimer() {
     if (auctionTimer) {
         clearInterval(auctionTimer);
@@ -155,7 +142,7 @@ function stopTimer() {
     }
 }
 
-// Actualizar la pantalla del timer
+// Actualizar pantalla del timer
 function updateTimerDisplay() {
     document.getElementById('timer').textContent = timeRemaining;
 }
@@ -165,7 +152,7 @@ function startAutoUpdates() {
     updateInterval = setInterval(() => {
         loadItems();
         updateStats();
-    }, 1000); // Actualizar cada segundo
+    }, 1000);
 }
 
 // Parar actualizaciones automáticas
@@ -176,21 +163,18 @@ function stopAutoUpdates() {
     }
 }
 
-// Cargar items desde el servidor
+// Cargar items del servidor
 async function loadItems() {
     try {
         const response = await fetch('/items?sort=highestBid');
         
         if (response.ok) {
             const newItems = await response.json();
-            
-            // Verificar si hay cambios para animaciones
             const hasChanges = checkForChanges(newItems);
             
             currentItems = newItems;
             displayItems();
             
-            // Si hay cambios, actualizar estadísticas
             if (hasChanges) {
                 updateStats();
             }
@@ -202,7 +186,7 @@ async function loadItems() {
     }
 }
 
-// Verificar si hay cambios en las pujas
+// Verificar cambios en pujas
 function checkForChanges(newItems) {
     if (currentItems.length !== newItems.length) return true;
     
@@ -231,10 +215,10 @@ function displayItems() {
         
         return `
             <tr>
-                <td class="item-name">⚔️ ${item.name}</td>
+                <td class="item-name">${item.name}</td>
                 <td class="price">${item.basePrice} monedas</td>
                 <td class="highest-bid">${item.highestBid} monedas</td>
-                <td class="leader">${hasLeader ? '👑 ' + item.highestBidder : '👻 Nadie'}</td>
+                <td class="leader">${hasLeader ? item.highestBidder : 'Nadie'}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
             </tr>
         `;
@@ -263,22 +247,20 @@ function showResults(results) {
         resultsContainer.innerHTML = results.map(result => `
             <div class="result-item">
                 <div class="result-info">
-                    <div class="result-item-name">⚔️ ${result.item}</div>
-                    <div class="result-winner">🏆 Ganador: ${result.winner}</div>
+                    <div class="result-item-name">${result.item}</div>
+                    <div class="result-winner">Ganador: ${result.winner}</div>
                 </div>
-                <div class="result-price">💰 ${result.finalBid} monedas</div>
+                <div class="result-price">${result.finalBid} monedas</div>
             </div>
         `).join('');
     }
     
-    // Mostrar la sección de resultados
+    // Mostrar sección de resultados
     resultsSection.classList.remove('hidden');
-    
-    // Scroll hacia los resultados
     resultsSection.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Resetear para una nueva subasta
+// Resetear para nueva subasta
 function resetForNewAuction() {
     if (confirm('¿Estás seguro de que quieres comenzar una nueva subasta? Esto reiniciará todos los datos.')) {
         // Ocultar resultados
@@ -289,13 +271,13 @@ function resetForNewAuction() {
         
         // Resetear status
         const statusElement = document.getElementById('auction-status');
-        statusElement.textContent = '📴 Subasta Cerrada';
+        statusElement.textContent = 'Subasta Cerrada';
         statusElement.classList.remove('active');
         
         // Resetear timer
         timeRemaining = 60;
         document.getElementById('timer').textContent = '60';
-        document.getElementById('timer').className = 'timer'; // Quitar clases de warning/critical
+        document.getElementById('timer').className = 'timer';
         
         // Recargar items
         loadItems();
